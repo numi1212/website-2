@@ -1,0 +1,65 @@
+---
+title: "Billboard Graphic"
+execute: 
+  echo: false
+---
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+
+```
+
+```{r}
+# Load required packages
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+# Load the data
+data("billboard", package = "tidyr")
+
+# Transform the data from wide to long format
+billboard_long <- billboard %>%
+  pivot_longer(cols = starts_with("wk"),
+               names_to = "week",
+               values_to = "rank",
+               values_drop_na = TRUE) %>%
+  mutate(week = as.integer(gsub("wk", "", week)))
+
+# Pick top 5 songs to visualize
+top_songs <- billboard_long %>%
+  group_by(artist, track) %>%
+  summarise(min_rank = min(rank), .groups = "drop") %>%
+  arrange(min_rank) %>%
+  slice(1:5)
+
+# Filter the main data to include only those top songs
+plot_data <- billboard_long %>%
+  semi_join(top_songs, by = c("artist", "track"))
+
+# Create a stylish plot
+ggplot(plot_data, aes(x = week, y = rank, color = track, group = track)) +
+  geom_line(linewidth = 1.2) +
+  scale_y_reverse(breaks = seq(0, 100, 10)) +  # reverse y-axis (rank 1 is top)
+  labs(title = "Top Billboard Songs Over Time",
+       subtitle = "Ranking trajectories of top 5 songs",
+       x = "Week on Chart",
+       y = "Billboard Rank",
+       color = "Track") +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(color = "gray30"),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+  
+```
+
+
+This is a Quarto website.
+
+To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+
+
